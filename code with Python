@@ -1,0 +1,57 @@
+import numpy
+from matplotlib import pyplot
+%matplotlib inline
+from matplotlib import rcParams, cm
+rcParams['font.family'] = 'serif'
+rcParams['font.size'] = 16
+------------------------------------------------------------------------
+n = 192.0
+Du = 0.00016
+Dv = 0.00008
+F = 0.035
+k = 0.065
+dh = 5.0/(n-1)
+T = 8000.0
+dt = (0.9 * dh**2) /(4.0*max(Du,Dv))
+nt = int(T/dt)
+dx = dh
+dy = dh
+------------------------------------------------------------------------
+def reaction_diffusion_problem(U,V, Du, Dv, F, k, nt, dt, dx, dy):
+   
+    for n in range(nt):
+        Un = U.copy()
+        Vn = V.copy()
+                
+        
+        U[1:-1,1:-1] = Un[1:-1,1:-1] + dt *\
+        ((Du/dx**2 * (Un[2:,1:-1] - 2*Un[1:-1,1:-1] + Un[:-2,1:-1]) +\
+          Du/dy**2 * (Un[1:-1,2:] - 2*Un[1:-1,1:-1] + Un[1:-1,:-2])) -\
+         Un[1:-1,1:-1] * Vn[1:-1,1:-1]**2 + F * (1 - Un[1:-1,1:-1]))
+        V[1:-1,1:-1] = Vn[1:-1,1:-1] + dt *\
+        ((Dv/dx**2 * (Vn[2:,1:-1] - 2*Vn[1:-1,1:-1] + Vn[:-2,1:-1]) +\
+          Dv/dy**2 * (Vn[1:-1,2:] - 2*Vn[1:-1,1:-1] + Vn[1:-1,:-2])) +\
+         Un[1:-1,1:-1] * Vn[1:-1,1:-1]**2 - (F + k) * Vn[1:-1,1:-1])
+  
+        # Enforce Neumann BCs
+        U[0,:] = U[1,:]
+        U[:,0] = U[:,1]
+        V[0,:] = V[1,:]
+        V[:,0] = V[:,1]
+    
+        U[-1,:] = U[-2,:]
+        U[:,-1] = U[:,-2]
+        V[-1,:] = V[-2,:]
+        V[:,-1] = V[:,-2]
+    
+    return(U,V)
+------------------------------------------------------------------------
+import numpy
+uvinitial = numpy.load('./uvinitial.npz')
+U_real = uvinitial['U']
+V_real = uvinitial['V']
+------------------------------------------------------------------------
+[U_8000, V_8000] = reaction_diffusion_problem(U_real,V_real, Du, Dv, F, k, nt, dt, dx, dy)
+------------------------------------------------------------------------
+uans = U_8000.copy()
+print(uans[100,::40])
